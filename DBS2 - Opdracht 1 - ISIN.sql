@@ -87,58 +87,57 @@ CREATE OR REPLACE FUNCTION DBS2_generateISIN
 )
 RETURN VARCHAR2
 AS
-  newStudentNumber VARCHAR2(50) := '';
+  v_newStudentNumber VARCHAR2(50) := '';
+  v_temp VARCHAR2(50) := '';
+  v_count NUMBER(5) := 0;
+  v_temp2 VARCHAR(50) := '';
+  v_temp3 VARCHAR(50) := '';
+  --v_tempNumber NUMBER(4);
   
-  checksum VARCHAR2(30);
-  checksum2 VARCHAR2(30);
-  checksum3 VARCHAR2(30);
-  positie NUMBER(2);
-  going NUMBER(1) := 1;
+  v_group1 VARCHAR2(4) := ''; 
+  v_group2 VARCHAR2(4) := '';
+  v_group3 VARCHAR2(4) := '';
+  v_group4 VARCHAR2(4) := '';
 BEGIN
-  checksum := TO_NUMBER(universityCode) + TO_NUMBER(countryCode) + studentNumber;
-  
-  WHILE positie < LENGTH(checksum) - 1
+  -- CREATE CHECKSUM
   LOOP
-    checksum2 := checksum2 + SUBSTR(checksum, positie, 4) + '';
-    positie := positie + 4;
+    v_temp := v_temp || ASCII(SUBSTR(universityCode, v_count+1, 1 )) - 49;
+    v_count := v_count + 1;
+    EXIT WHEN v_count = LENGTH(universityCode);
   END LOOP;
   
-  positie := LENGTH(checksum2) - 1;
-  checksum := '';
+  v_temp := v_temp || studentNumber;
   
-  WHILE LENGTH(checksum3) < LENGTH(checksum2)
-  LOOP
-    IF going == 1
-    {
-      IF LENGTH(SUBSTR(checksum2, INSTR(checksum2, '', -1))) == 4
-      {
-        checksum3 := checksum3 + SUBSTR(checksum2, positie - 4, 4);
-        positie := positie - 4;
-        going := 0;
-      }
-      ELSIF LENGTH(SUBSTR(checksum2, INSTR(checksum2, -1))) == 3
-      {
-        checksum3 := checksum3 + SUBSTR(checksum2, positie - 3, 3);
-        positie := positie - 4;
-        going := 0;
-      }
-      ELSIF LENGTH(SUBSTR(checksum2, INSTR(checksum2, -1))) == 2
-      {
-        checksum3 := checksum3 + SUBSTR(checksum2, positie - 2, 2);
-        positie := positie - 4;      
-        going := 0;
-      }
-      ELSIF LENGTH(SUBSTR(checksum2, INSTR(checksum2, -1))) == 1
-      {
-        checksum3 := checksum3 + SUBSTR(checksum2, positie - 1, 1);
-        positie := positie - 4;
-        going := 0;
-      }    
-    }
-  END LOOP
-  dbms_output.put_line('implementeer deze functie verder...');
+  v_group1 := SUBSTR(v_temp, 1, 4);
+  v_group2 := SUBSTR(v_temp, 5, 4);
+  v_group3 := SUBSTR(v_temp, 9, 4);
+  v_group4 := SUBSTR(v_temp, 13, 4);
+  
+  v_temp := v_group4 || v_group3 || v_group2 || v_group1;  
+  
+  --v_tempNumber := TO_NUMBER(v_temp) % 62;
+  v_temp := TO_CHAR(MOD( TO_NUMBER(v_temp), 62 ));
+  
+  IF LENGTH(v_temp) = 1 THEN
+    v_temp := '0' || v_temp;
+  END IF;  
 
-  RETURN newStudentNumber;
+  -- CREATE newStudentNumber
+  v_temp2 := studentNumber || v_temp;
+  
+  v_count := 0;
+  
+  LOOP
+    v_temp3 := v_temp3 || ' ' || SUBSTR(v_temp2, v_count + 1, 4);
+    v_count := v_count + 4;
+    EXIT WHEN v_count > LENGTH(v_temp2);
+  END LOOP;  
+  
+  v_newStudentNumber := countryCode || v_temp3 || ' ' || universityCode;
+  
+  dbms_output.put_line(v_newStudentNumber);
+
+  RETURN v_newStudentNumber;
 END;
 /
 
